@@ -200,9 +200,9 @@ def generate_log_normal_counts(
 
     for _ in range(num_samples):
         rand_variance = np.random.uniform(*variance_range)
-        rand_count_vec = np.random.lognormal(mean, rand_variance, num_celltypes)
-        rand_prop_vec = np.ceil((rand_count_vec / rand_count_vec.sum()) * num_cells).astype(int)
-        prop_df = pd.concat([prop_df, pd.DataFrame(rand_prop_vec).T])
+        rand_lognorm_vec = np.random.lognormal(mean, rand_variance, num_celltypes)
+        rand_prop_vec = rand_lognorm_vec / rand_lognorm_vec.sum()
+        prop_df = pd.concat([prop_df, pd.DataFrame([rand_prop_vec], columns=prop_df.columns)])
 
     return generate_count_from_props(prop_df, num_cells)
 
