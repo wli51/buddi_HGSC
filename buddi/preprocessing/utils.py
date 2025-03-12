@@ -42,7 +42,7 @@ def subset_adata_by_cell_type(
     return {ctype: in_adata[in_adata.obs[cell_type_col] == ctype] for ctype in in_adata.obs[cell_type_col].unique()}
 
 """
-Pseudo-bulk sample proportion generation utilities
+Pseudo-bulk sample proportion/count generation utilities
 """
 
 def generate_random_similar_props(
@@ -79,3 +79,43 @@ def generate_random_similar_props(
 
     # Convert to DataFrame
     return pd.DataFrame(total_prop_list, columns=cell_order)
+
+def generate_count_from_props(
+        prop_df: pd.DataFrame, 
+        num_cells: int
+    ) -> pd.DataFrame:
+    """
+    Helper function that generates a count matrix based on a proportion matrix and the total number of cells.
+
+    :param prop_df: DataFrame containing cell-type proportions for each sample.
+    :param num_cells: Number of total cells to sample.
+    :return: Numpy array of cell counts per cell type.
+    """
+
+    count_df = pd.DataFrame(columns=prop_df.columns)
+
+    for _, prop_profile in prop_df.iterrows():
+        count_vec = np.ceil(prop_profile * num_cells).astype(int)
+        # Adjust rounding inconsistencies
+        count_vec[np.argmax(count_vec)] += (num_cells - count_vec.sum())
+
+        count_df = count_df.append(count_vec, ignore_index=True)
+
+    return count_df
+
+def generate_true_count(
+        in_adata: AnnData, 
+        num_cells: int, 
+        cell_type_col: str
+    ) -> pd.DataFrame:
+    """
+    Helper function that generates a count vector based on the true cell type proportions in an AnnData object.
+    Calls get_true_proportions to get the true prop df and uses generate_count_from_props to generate the count df.
+
+    :param in_adata: The AnnData object containing single-cell expression data.
+    :param num_cells: Number of total cells to sample.
+    :param cell_type_col: Column name in in_adata.obs specifying cell type labels.
+    :return: 
+    """
+    true_prop_df = get_true_proportions(in_adata, cell_type_col)
+    return generate_count_from_props(true_prop_df, num_cells)
