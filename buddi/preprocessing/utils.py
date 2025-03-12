@@ -99,11 +99,11 @@ def generate_count_from_props(
         # Adjust rounding inconsistencies
         count_vec[np.argmax(count_vec)] += (num_cells - count_vec.sum())
 
-        count_df = count_df.append(count_vec, ignore_index=True)
+        count_df = pd.concat([count_df, pd.DataFrame(count_vec).T])
 
     return count_df
 
-def generate_true_count(
+def generate_true_counts(
         in_adata: AnnData, 
         num_cells: int, 
         cell_type_col: str
@@ -115,7 +115,7 @@ def generate_true_count(
     :param in_adata: The AnnData object containing single-cell expression data.
     :param num_cells: Number of total cells to sample.
     :param cell_type_col: Column name in in_adata.obs specifying cell type labels.
-    :return: 
+    :return: pandas DataFrame containing cell counts per cell type.
     """
     true_prop_df = get_true_proportions(in_adata, cell_type_col)
     return generate_count_from_props(true_prop_df, num_cells)
