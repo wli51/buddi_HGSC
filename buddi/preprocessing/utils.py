@@ -181,8 +181,8 @@ def generate_log_normal_counts(
         cell_order: List[str], 
         num_cells: int, 
         num_samples: int,
-        mean: float = 5, 
-        variance_range: float = (1, 3)
+        mean: float = 5.0, 
+        variance_range: Tuple[float, float] = (1.0, 3.0)
     ) -> pd.DataFrame:
     """
     Generates a count vector by sampling from a log-normal distribution.
