@@ -127,17 +127,28 @@ def get_single_celltype_prop_matrix(
     return pd.concat(total_prop_list, ignore_index=True)
 
 def generate_count_from_props(
-        prop_df: pd.DataFrame, 
+        prop_df: Union[pd.DataFrame, pd.Series],
         num_cells: int
     ) -> pd.DataFrame:
     """
     Helper function that generates a count matrix based on a proportion matrix and the total number of cells.
 
-    :param prop_df: DataFrame containing cell-type proportions for each sample.
+    :param prop_df: DataFrame or Series containing cell type proportions.
+    DataFrame should have shape (num_samp, num_celltypes) and column names should be cell type names.
+    Series should have cell type names as index/key.
     :param num_cells: Number of total cells to sample.
-    :return: Numpy array of cell counts per cell type.
+    :return: DataFrame containing cell counts per cell type. 
+    If prop_df is a dataframe, returns dataframe of shape (length(prop_df), num_celltypes).
+    If prop_df is a series, returns dataframe of shape (1, num_celltypes).
     """
 
+    if isinstance(prop_df, pd.DataFrame):
+        pass
+    elif isinstance(prop_df, pd.Series):
+        prop_df = pd.DataFrame(prop_df).T
+    else:
+        raise TypeError("prop_df must be a DataFrame or Series")
+    
     count_df = pd.DataFrame(columns=prop_df.columns)
 
     for _, prop_profile in prop_df.iterrows():
