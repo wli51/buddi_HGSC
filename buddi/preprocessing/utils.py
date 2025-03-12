@@ -119,3 +119,32 @@ def generate_true_counts(
     """
     true_prop_df = get_true_proportions(in_adata, cell_type_col)
     return generate_count_from_props(true_prop_df, num_cells)
+
+def generate_log_normal_counts(
+        cell_order: List[str], 
+        num_cells: int, 
+        num_samples: int,
+        mean: float = 5, 
+        variance_range: float = (1, 3)
+    ) -> pd.DataFrame:
+    """
+    Generates a count vector by sampling from a log-normal distribution.
+
+    :param cell_order: List of cell type names.
+    :param num_cells: Total number of cells.
+    :param num_samples: Number of samples to generate.
+    :param mean: Mean of the log-normal distribution.
+    :param variance_range: Tuple specifying the range of variance to randomly sample from.
+    :return: 
+    """
+
+    num_celltypes = len(cell_order)
+    prop_df = pd.DataFrame(columns=cell_order)
+
+    for _ in range(num_samples):
+        rand_variance = np.random.uniform(*variance_range)
+        rand_count_vec = np.random.lognormal(mean, rand_variance, num_celltypes)
+        rand_prop_vec = np.ceil((rand_count_vec / rand_count_vec.sum()) * num_cells).astype(int)
+        prop_df = pd.concat([prop_df, pd.DataFrame(rand_prop_vec).T])
+
+    return generate_count_from_props(prop_df, num_cells)
