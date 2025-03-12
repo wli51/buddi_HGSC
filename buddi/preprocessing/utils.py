@@ -47,8 +47,7 @@ Pseudo-bulk sample proportion/count generation utilities
 
 def generate_random_similar_props(
         num_samp: int, 
-        base_prop: np.ndarray, ## TODO may be combine base_prop with cell_order?
-        cell_order: List[str], 
+        props_df: Union[pd.DataFrame, pd.Series],
         min_corr: float = 0.8
     ) -> pd.DataFrame:
     """
@@ -57,12 +56,24 @@ def generate_random_similar_props(
     This is meant for generating pseudo-bulk samples similar to some ground truth dataset in terms of composition but with some variation.
 
     :param num_samp: Number of samples to generate.
-    :param base_prop: Base proportion vector (1D array of shape (num_celltypes,)).
-    :param cell_order: List of cell type names (column names for the output DataFrame).
+    :param props_df: DataFrame or Series containing the base proportion vector. 
+    DataFrame should have shape (1, num_celltypes) and column names should be cell type names.
+    If a DataFrame has more than one row, only the first row will be considered as the prop vector.
+    Series should have cell type names as index/key.
     :param min_corr: Minimum correlation threshold with the base proportion.
     :return: DataFrame with shape (num_samp, num_celltypes), where each row is a sample's cell-type proportions.
     """
     total_prop_list = []
+
+    if isinstance(props_df, pd.DataFrame):
+        props_df = props_df.iloc[0, :] # to series
+    elif isinstance(props_df, pd.Series):
+        pass
+    else:
+        raise TypeError("props_df must be a DataFrame or Series")
+    
+    base_prop = props_df.values
+    cell_order = props_df.keys().to_list()
 
     ## Sample random proportion scaling factors until the scaled proportion 
     # is sufficiently correlated with the base proportion
