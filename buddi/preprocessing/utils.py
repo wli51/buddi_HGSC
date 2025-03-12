@@ -80,6 +80,41 @@ def generate_random_similar_props(
     # Convert to DataFrame
     return pd.DataFrame(total_prop_list, columns=cell_order)
 
+def get_single_celltype_prop_matrix(
+        num_samp: int, 
+        cell_order: List[str], 
+        background_prop: float = 0.01
+    ) -> pd.DataFrame:
+    """
+    Helper function to generate a proportion matrix where each row represents a sample in which one cell type 
+    dominates while other cell types have a small background presence.
+
+    :param num_samp: Number of samples to generate for each cell type.
+    :param cell_order: List of cell types (column names for the output DataFrame).
+    :param background_prop: Proportion assigned to non-dominant cell types.
+    :return: DataFrame of shape (num_samp * num_celltypes, num_celltypes).
+    """
+    num_celltypes = len(cell_order)
+    total_prop_list = []
+
+    for dominant_idx in range(num_celltypes):
+
+        # Start with background levels for all cell types
+        # faster memory allocation vs [background_prop] * num_celltypes
+        base_prop = np.full(num_celltypes, background_prop)
+
+        # Set dominant cell type to full proportion
+        # no need to softmax here get_corr_prop_matrix handles it
+        base_prop[dominant_idx] = 1
+
+        # Generate correlated proportion matrix
+        prop_matrix = generate_random_similar_props(
+            num_samp, base_prop, cell_order, min_corr=0.95)
+        total_prop_list.append(prop_matrix)
+
+    # Concatenate into a single DataFrame
+    return pd.concat(total_prop_list, ignore_index=True)
+
 def generate_count_from_props(
         prop_df: pd.DataFrame, 
         num_cells: int
