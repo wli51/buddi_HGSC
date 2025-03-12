@@ -148,3 +148,31 @@ def generate_log_normal_counts(
         prop_df = pd.concat([prop_df, pd.DataFrame(rand_prop_vec).T])
 
     return generate_count_from_props(prop_df, num_cells)
+
+"""
+Pseudo-bulk expression generation utilities
+"""
+
+def get_cell_type_sum(
+        in_adata: AnnData, ## TODO may be not include in_adata and rely completely on cell_adata to get the shapes
+        cell_adata: AnnData, 
+        num_cells: int
+    ) -> np.array:
+    """
+    Helper function to generate the pseudobulk gene expression for a given cell type,
+    given the cell type specific subset of the AnnData object and the number of cells to sample.
+
+    :param in_adata: The AnnData object containing expression data.
+    :param cell_adata: The subsetted AnnData object corresponding to the target cell type.
+    :param num_cells: Number of cells to sample.
+    :return: Summed gene expression vector for the selected cells of shape (num_genes,).
+    """
+    # Handle case where there are no cells of this type
+    if cell_adata.shape[0] == 0:
+        return np.zeros(in_adata.shape[1])
+
+    # Sample cells with replacement
+    sampled_cells = cell_adata[np.random.choice(cell_adata.shape[0], num_cells, replace=True)]
+
+    # Sum gene expression across sampled cells
+    return sampled_cells.X.sum(axis=0)
