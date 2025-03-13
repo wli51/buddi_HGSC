@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from anndata import AnnData
 
-import utils
-from utils import CellDf
+from . import utils
+from .utils import CellDf
 
 def generate_pseudo_bulk_from_counts(
         in_adata: AnnData, 
