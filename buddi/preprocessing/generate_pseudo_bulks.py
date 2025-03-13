@@ -88,7 +88,7 @@ def generate_pseudo_bulk_from_props(
     :return: Tuple of (total proportion DataFrame, total expression DataFrame).
     """
     
-    count_df = utils.generate_count_from_props(props_df, num_cells)
+    count_df = utils.generate_count_from_props(props_df, num_cells, random_num_cell_range)
 
     return generate_pseudo_bulk_from_counts(
         in_adata=in_adata, 
