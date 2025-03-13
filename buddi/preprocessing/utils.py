@@ -117,10 +117,11 @@ def get_single_celltype_prop_matrix(
         # Set dominant cell type to full proportion
         # no need to softmax here get_corr_prop_matrix handles it
         base_prop[dominant_idx] = 1
+        base_prop_df = pd.DataFrame([base_prop], columns=cell_order)
 
         # Generate correlated proportion matrix
         prop_matrix = generate_random_similar_props(
-            num_samp, base_prop, cell_order, min_corr=0.95)
+            num_samp, base_prop_df, min_corr=0.95)
         total_prop_list.append(prop_matrix)
 
     # Concatenate into a single DataFrame
