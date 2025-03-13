@@ -248,11 +248,12 @@ def generate_true_counts(
     return generate_counts_from_props(true_prop_df, num_cells)
 
 def generate_log_normal_counts(
-        cell_order: List[str], 
+        cell_order: Iterable[str], 
         num_cells: int, 
         num_samples: int,
         mean: float = 5.0, 
-        variance_range: Tuple[float, float] = (1.0, 3.0)
+        variance_range: Tuple[float, float] = (1.0, 3.0),
+        present_cell_types: Optional[Iterable[str]] = None
     ) -> pd.DataFrame:
     """
     Generates a count vector by sampling from a log-normal distribution.
@@ -262,19 +263,31 @@ def generate_log_normal_counts(
     :param num_samples: Number of samples to generate.
     :param mean: Mean of the log-normal distribution.
     :param variance_range: Tuple specifying the range of variance to randomly sample from.
-    :return: 
+    :param present_cell_types: Optional list of cell types to include in the count matrix.
+    If not provided, all cell types in cell_order are assumed to be present.
+    If provided, will be used to identify missing cell types and zero out their counts.
+    :return: DataFrame with count vectors as rows and cell types as columns.
     """
 
     num_celltypes = len(cell_order)
+
+    if present_cell_types is None:
+        present_cell_types = cell_order
+
     prop_df = pd.DataFrame(columns=cell_order)
 
     for _ in range(num_samples):
         rand_variance = np.random.uniform(*variance_range)
         rand_lognorm_vec = np.random.lognormal(mean, rand_variance, num_celltypes)
+
+        # zero out missing cell type prop
+        presence_mask = np.isin(cell_order, present_cell_types)
+        rand_lognorm_vec[~presence_mask] = 0
+
         rand_prop_vec = rand_lognorm_vec / rand_lognorm_vec.sum()
         prop_df = pd.concat([prop_df, pd.DataFrame([rand_prop_vec], columns=prop_df.columns)])
 
-    return generate_count_from_props(prop_df, num_cells)
+    return generate_counts_from_props(prop_df, num_cells)
 
 """
 Pseudo-bulk expression generation utilities
