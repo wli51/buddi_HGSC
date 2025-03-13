@@ -13,7 +13,8 @@ scRNA seq data processing utilities
 
 def get_true_proportions(
         in_adata: AnnData, 
-        cell_type_col: str
+        cell_type_col: str,
+        cell_order: Optional[Iterable[str]] = None
     ) -> pd.DataFrame:
     """
     Helper function that calculates the true proportion of cell types in the given AnnData object.
@@ -21,10 +22,26 @@ def get_true_proportions(
 
     :param in_adata: The AnnData object containing single-cell expression data.
     :param cell_type_col: Column name in in_adata.obs specifying cell type labels.
-    :return: DataFrame containing a single-row vector of cell type proportions.
+    :param cell_order: Optional Iterable of strings indicating all cell types to include.
+    If not provided, will used the sorted unique values of in_adata.obs[cell_type_col].
+    If provided, should be a superset of all unique cell types in in_adata.
+    :return: DataFrame containing the true proportion of each cell type.
     """
+    
+    if cell_order is None:
+        cell_order = sorted(in_adata.obs[cell_type_col].unique())
+    elif isinstance(cell_order, Iterable):
+        if all([ctype in cell_order for ctype in in_adata.obs[cell_type_col].unique()]):
+            pass
+        else:
+            raise ValueError("cell_order must contain all unique cell types in the input data")
+    else:
+        raise TypeError("cell_order must be a list of strings")
+        
     prop_counts = in_adata.obs[cell_type_col].value_counts(normalize=True)
-    return pd.DataFrame(prop_counts).T  # Return as a single-row DataFrame
+    prop_counts = pd.DataFrame([prop_counts])
+
+    return prop_counts.reindex(columns=cell_order, fill_value=0)
 
 def subset_adata_by_cell_type(
         in_adata: AnnData, 
