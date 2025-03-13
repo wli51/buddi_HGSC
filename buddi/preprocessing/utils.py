@@ -27,7 +27,8 @@ def get_true_proportions(
 
 def subset_adata_by_cell_type(
         in_adata: AnnData, 
-        cell_type_col: str
+        cell_type_col: str,
+        cell_order: Optional[Iterable[str]] = None
     ) -> CellDf:
     """
     Constructs a dictionary mapping each cell type to a subset of the AnnData object
@@ -36,10 +37,40 @@ def subset_adata_by_cell_type(
 
     :param in_adata: The AnnData object containing single-cell expression data.
     :param cell_type_col: Column name in in_adata.obs specifying the cell type labels.
+    :param cell_order: Optional Iterable of strings indicating all cell types to include.
+    If not provided, will used the sorted unique values of in_adata.obs[cell_type_col].
+    If provided, should be a superset of all unique cell types in in_adata. Cell types that 
+    do not exist in in_adata will prompt this function to create an empty AnnData object to indicate absence
+    of a cell type in the input adata split. 
     :return: Dictionary where keys are cell type names and values are subsetted AnnData objects.
     When a cell type is not present in the input data, the corresponding value will be an empty AnnData object.
     """
-    return {ctype: in_adata[in_adata.obs[cell_type_col] == ctype] for ctype in in_adata.obs[cell_type_col].unique()}
+
+    if cell_order is None:
+        cell_order = sorted(in_adata.obs[cell_type_col].unique())
+    elif isinstance(cell_order, Iterable):
+        if all([ctype in cell_order for ctype in in_adata.obs[cell_type_col].unique()]):
+            pass
+        else:
+            raise ValueError("cell_order must contain all unique cell types in the input data")
+    else:
+        raise TypeError("cell_order must be a list of strings")
+    
+    cell_df = {}
+    for cell_type in cell_order:
+        # when cell_type does not exist in the input adata, this will be 
+        # an empty AnnData object of shape (0, num_genes) which indicates absence of the cell type
+        # while the number of genes will still be trackable despite has no observations.
+        # This will be useful downstream
+        cell_df[cell_type] = in_adata[in_adata.obs[cell_type_col] == cell_type]
+
+        if cell_df[cell_type].shape[0] == 0:
+            warnings.warn(f"Cell type '{cell_type}' not found in the input data. "
+                          "Creating an empty AnnData paceholder.\n"
+                          "Downstream in the workflow no pseudo-bulk samples will be generated for this cell type."
+                          )
+
+    return cell_df
 
 """
 Pseudo-bulk sample proportion/count generation utilities
