@@ -169,7 +169,19 @@ def generate_single_celltype_dominant_props(
     # Concatenate into a single DataFrame
     return pd.concat(total_prop_list, ignore_index=True)
 
-def generate_count_from_props(
+def generate_prop_from_counts(
+        count_df: pd.DataFrame
+    ) -> pd.DataFrame:
+    """
+    Helper function that generates a proportion matrix based on a count matrix.
+
+    :param count_df: DataFrame containing cell counts per cell type.
+    :return: DataFrame containing cell type proportions.
+    """
+
+    return count_df.div(count_df.sum(axis=1), axis=0).reset_index(drop=True)
+
+def generate_counts_from_props(
         prop_df: Union[pd.DataFrame, pd.Series],
         num_cells: Optional[Union[int, List[int]]] = None,
         random_num_cell_range: Tuple[int, int] = (200, 5000)
