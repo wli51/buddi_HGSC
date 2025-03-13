@@ -7,73 +7,61 @@ from anndata import AnnData
 import utils
 from utils import CellDf
 
-def generate_pseudo_bulk_from_props(
+def generate_pseudo_bulk_from_counts(
         in_adata: AnnData, 
         cell_df: CellDf, 
-        props_df: pd.DataFrame, 
-        num_cells: int, 
-        cell_type_col: str, 
+        count_df: pd.DataFrame,
         cell_noise: List[np.array] = None, 
-        use_sample_noise: bool = True
-    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        use_sample_noise: bool = True,
+        sample_noise_kwargs: Dict = {}
+    ) -> pd.DataFrame:
     """
-    Generates pseudobulk expression profiles based on provided proportion data.
+    Generates pseudobulk expression profiles based on provided count data.
 
     :param in_adata: The AnnData object containing single-cell expression data.
     :param cell_df: Dictionary of cell type names mapped to subsetted AnnData objects.
-    :param props_df: DataFrame containing cell type proportions for each sample.
-    :param num_cells: Number of cells to sample for each pseudobulk profile.
-    :param cell_type_col: Column name in in_adata.obs specifying the cell type labels.
+    :param count_df: DataFrame containing the number of cells to sample for each cell type.
     :param cell_noise: List of noise vectors for each cell type.
     :param use_sample_noise: Whether to apply additional noise to the pseudobulk profiles.
     :return: Tuple of (total proportion DataFrame, total expression DataFrame).
     """
-    num_celltypes = props_df.shape[1]
+    num_celltypes = count_df.shape[1]
 
     # Generate cell-specific noise if not provided
     if cell_noise is None:
         cell_noise = [np.random.lognormal(0, 0.1, in_adata.shape[1]) for _ in range(num_celltypes)]
 
-    total_prop_list = []
     total_expr_list = []
 
-    num_cells = num_cells if num_cells is not None else np.random.randint(200, 5000)
-    count_df = utils.generate_count_from_props(props_df, num_cells)
-
-    for samp_idx, count_profile in count_df.iterrows():
+    for samp_idx, (_, count_profile) in enumerate(count_df.iterrows()):
         if samp_idx % 100 == 0:
             print(f"Processing sample {samp_idx}")        
 
         # Initialize gene expression vector for pseudobulk
-        sum_over_cells = np.zeros(in_adata.shape[1])
+        sum_over_cells = np.zeros((1, in_adata.shape[1]))
 
-        for cell_idx, (cell_type, num_cell) in enumerate(count_profile.items()):
+        for cell_idx, (cell_type, cell_count) in enumerate(count_profile.items()):
 
-            ct_sum = utils.get_cell_type_sum(in_adata, cell_df[cell_type], num_cell)
+            ct_sum = utils.get_cell_type_sum(in_adata, cell_df[cell_type], cell_count)
             # Apply cell-specific noise
             ct_sum = np.multiply(ct_sum, cell_noise[cell_idx])
             sum_over_cells += ct_sum
 
         # Apply sample noise if enabled
         if use_sample_noise:
-            sample_noise = np.random.lognormal(0, 1, in_adata.shape[1])
-            sum_over_cells *= sample_noise
-            sum_over_cells *= np.random.lognormal(0, 0.1, 1)[0]
-            sum_over_cells *= np.random.lognormal(0, 0.1, in_adata.shape[1])
-            sum_over_cells = np.random.poisson(sum_over_cells)[0]
+            sum_over_cells = utils.apply_sample_wise_noise(
+                sum_over_cells, **sample_noise_kwargs)
 
         # Convert to DataFrame
-        sum_over_cells_df = pd.DataFrame(sum_over_cells).T
+        sum_over_cells_df = pd.DataFrame(sum_over_cells)
         sum_over_cells_df.columns = in_adata.var['gene_ids']
 
         total_expr_list.append(sum_over_cells_df)
-        total_prop_list.append(props_df.iloc[samp_idx].values)
 
     # Combine into final DataFrames
-    total_prop_df = pd.concat(total_prop_list, axis=0)
     total_expr_df = pd.concat(total_expr_list, axis=0)
 
-    return total_prop_df, total_expr_df
+    return total_expr_df
 
 def generate_random_pseudo_bulk_profiles(
         in_adata: AnnData, 
