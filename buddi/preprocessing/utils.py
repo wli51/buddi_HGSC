@@ -122,24 +122,35 @@ def generate_random_similar_props(
     # Convert to DataFrame
     return pd.DataFrame(total_prop_list, columns=cell_order)
 
-def get_single_celltype_prop_matrix(
+def generate_single_celltype_dominant_props(
         num_samp: int, 
-        cell_order: List[str], 
-        background_prop: float = 0.01
+        cell_order: Iterable[str], 
+        background_prop: float = 0.01,
+        present_cell_types: Optional[Iterable[str]] = None
     ) -> pd.DataFrame:
     """
     Helper function to generate a proportion matrix where each row represents a sample in which one cell type 
     dominates while other cell types have a small background presence.
 
     :param num_samp: Number of samples to generate for each cell type.
-    :param cell_order: List of cell types (column names for the output DataFrame).
+    :param cell_order: Iterable of cell types (column names for the output DataFrame).
     :param background_prop: Proportion assigned to non-dominant cell types.
+    :param present_cell_types: Optional list of cell types to include in the count matrix.
+    If not provided, all cell types in cell_order are assumed to be present.
+    If provided, will be used to identify missing cell types and zero out their counts.
     :return: DataFrame of shape (num_samp * num_celltypes, num_celltypes).
     """
     num_celltypes = len(cell_order)
+
+    if present_cell_types is None:
+        present_cell_types = cell_order
+
     total_prop_list = []
 
-    for dominant_idx in range(num_celltypes):
+    for dominant_idx, cell_type in enumerate(cell_order):
+
+        if cell_type not in present_cell_types:
+            continue
 
         # Start with background levels for all cell types
         # faster memory allocation vs [background_prop] * num_celltypes
