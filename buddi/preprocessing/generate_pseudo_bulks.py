@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,8 @@ def generate_pseudo_bulk_from_props(
         in_adata: AnnData, 
         cell_df: CellDf, 
         props_df: pd.DataFrame, 
-        num_cells: int, 
+        num_cells: Optional[Union[int, List[int]]] = None, 
+        random_num_cell_range: Tuple[int, int] = (200, 5000),
         cell_noise: List[np.array] = None, 
         use_sample_noise: bool = True,
         sample_noise_kwargs: Dict = {}
@@ -79,7 +80,9 @@ def generate_pseudo_bulk_from_props(
     :param in_adata: The AnnData object containing single-cell expression data.
     :param cell_df: Dictionary of cell type names mapped to subsetted AnnData objects.
     :param props_df: DataFrame containing the proportion of cells to sample for each cell type.
-    :param num_cells: Number of cells to sample for each pseudobulk profile.
+    :param num_cells: Number of total cells to sample. Optional. 
+    When not provided, samples random number of cells as a random integer between random_num_cell_range.
+    :param random_num_cell_range: Tuple specifying the range of random number of cells to sample.
     :param cell_noise: List of noise vectors for each cell type.
     :param use_sample_noise: Whether to apply additional noise to the pseudobulk profiles.
     :return: Tuple of (total proportion DataFrame, total expression DataFrame).
