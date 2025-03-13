@@ -237,7 +237,7 @@ def generate_true_counts(
     ) -> pd.DataFrame:
     """
     Helper function that generates a count vector based on the true cell type proportions in an AnnData object.
-    Calls get_true_proportions to get the true prop df and uses generate_count_from_props to generate the count df.
+    Calls get_true_proportions to get the true prop df and uses generate_counts_from_props to generate the count df.
 
     :param in_adata: The AnnData object containing single-cell expression data.
     :param num_cells: Number of total cells to sample.
@@ -245,7 +245,7 @@ def generate_true_counts(
     :return: pandas DataFrame containing cell counts per cell type.
     """
     true_prop_df = get_true_proportions(in_adata, cell_type_col)
-    return generate_count_from_props(true_prop_df, num_cells)
+    return generate_counts_from_props(true_prop_df, num_cells)
 
 def generate_log_normal_counts(
         cell_order: List[str], 
