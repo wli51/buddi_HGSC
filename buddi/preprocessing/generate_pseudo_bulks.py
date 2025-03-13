@@ -63,28 +63,23 @@ def generate_pseudo_bulk_from_counts(
 
     return total_expr_df
 
-def generate_random_pseudo_bulk_profiles(
+def generate_pseudo_bulk_from_props(
         in_adata: AnnData, 
-        num_samples: int, 
-        num_cells: int, 
-        use_true_prop: bool, 
         cell_df: CellDf, 
-        cell_type_col: str, 
-        cell_noise: List[np.ndarray] = None, 
+        props_df: pd.DataFrame, 
+        num_cells: int, 
+        cell_noise: List[np.array] = None, 
         use_sample_noise: bool = True,
-        num_test_samples: int = 100
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        sample_noise_kwargs: Dict = {}
+    ) -> pd.DataFrame:
     """
-    Generates pseudobulk expression matrices by generatiing cell type proportions completely at random 
-    or similar to some reference proportion profile and then sampling cells from each cell type accordingly.
-    Also optionally generates a test set of samples.
+    Generates pseudobulk expression profiles based on provided proportion data.
+    Wrapper function that calls generate_pseudo_bulk_from_counts after converting proportions to counts.
 
-    :param in_adata: The AnnData object containing single-cell RNA-seq data.
-    :param num_samples: Number of pseudobulk samples to generate.
-    :param num_cells: Number of cells to simulate per sample.
-    :param use_true_prop: Whether to use true cell type proportions.
-    :param cell_df: Dictionary mapping cell types to subsetted AnnData objects.
-    :param cell_type_col: Column name in in_adata.obs specifying cell type labels.
+    :param in_adata: The AnnData object containing single-cell expression data.
+    :param cell_df: Dictionary of cell type names mapped to subsetted AnnData objects.
+    :param props_df: DataFrame containing the proportion of cells to sample for each cell type.
+    :param num_cells: Number of cells to sample for each pseudobulk profile.
     :param cell_noise: List of noise vectors for each cell type.
     :param use_sample_noise: Whether to apply additional noise to the pseudobulk profiles.
     :return: Tuple of (total proportion DataFrame, total expression DataFrame).
