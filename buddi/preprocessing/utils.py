@@ -129,7 +129,8 @@ def get_single_celltype_prop_matrix(
 
 def generate_count_from_props(
         prop_df: Union[pd.DataFrame, pd.Series],
-        num_cells: int
+        num_cells: Optional[Union[int, List[int]]] = None,
+        random_num_cell_range: Tuple[int, int] = (200, 5000)
     ) -> pd.DataFrame:
     """
     Helper function that generates a count matrix based on a proportion matrix and the total number of cells.
@@ -137,7 +138,9 @@ def generate_count_from_props(
     :param prop_df: DataFrame or Series containing cell type proportions.
     DataFrame should have shape (num_samp, num_celltypes) and column names should be cell type names.
     Series should have cell type names as index/key.
-    :param num_cells: Number of total cells to sample.
+    :param num_cells: Number of total cells to sample. Optional. 
+    When not provided, samples random number of cells as a random integer between random_num_cell_range.
+    :param random_num_cell_range: Tuple specifying the range of random number of cells to sample.
     :return: DataFrame containing cell counts per cell type. 
     If prop_df is a dataframe, returns dataframe of shape (length(prop_df), num_celltypes).
     If prop_df is a series, returns dataframe of shape (1, num_celltypes).
@@ -152,10 +155,22 @@ def generate_count_from_props(
     
     count_df = pd.DataFrame(columns=prop_df.columns)
 
-    for _, prop_profile in prop_df.iterrows():
-        count_vec = np.ceil(prop_profile * num_cells).astype(int)
+    if num_cells is None:
+        num_cells = np.random.randint(*random_num_cell_range, len(prop_df))
+    elif isinstance(num_cells, int):
+        num_cells = np.full(len(prop_df), num_cells)
+    elif isinstance(num_cells, list):
+        if len(num_cells) != len(prop_df):
+            raise ValueError("If specified as a list, num_cells must have "
+                             "the same length as the number of samples in prop_df")
+        num_cells = np.array(num_cells)
+    else:
+        raise TypeError("num_cells must be an integer or a list of integers")
+
+    for i, (_, prop_profile) in enumerate(prop_df.iterrows()):
+        count_vec = np.ceil(prop_profile * num_cells[i]).astype(int)
         # Adjust rounding inconsistencies
-        count_vec[np.argmax(count_vec)] += (num_cells - count_vec.sum())
+        count_vec[np.argmax(count_vec)] += (num_cells[i] - count_vec.sum())
 
         count_df = pd.concat([count_df, pd.DataFrame(count_vec).T])
 
