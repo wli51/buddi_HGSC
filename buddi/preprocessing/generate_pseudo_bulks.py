@@ -42,7 +42,7 @@ def generate_pseudo_bulk_from_counts(
 
         for cell_idx, (cell_type, cell_count) in enumerate(count_profile.items()):
 
-            ct_sum = utils.get_cell_type_sum(in_adata, cell_df[cell_type], cell_count)
+            ct_sum = utils.get_cell_type_sum(cell_df[cell_type], cell_count)
             # Apply cell-specific noise
             ct_sum = np.multiply(ct_sum, cell_noise[cell_idx])
             sum_over_cells += ct_sum
