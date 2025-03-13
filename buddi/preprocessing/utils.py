@@ -249,3 +249,40 @@ def get_cell_type_sum(
 
     # Sum gene expression across sampled cells
     return sampled_cells.X.sum(axis=0)
+
+"""
+Noise application utilities
+"""
+
+def apply_sample_wise_noise(
+        expr: np.array,
+        gene_capture_efficiency_var: float = 1.0,
+        gene_library_size_var: float = 0.1,
+        gene_noise_var: float = 0.1,
+        poisson_resample: bool = True
+    ):
+    """
+    Helper function to apply noise to a gene expression vector.
+
+    :param expr: Gene expression vector of shape (1, num_genes).
+    :param gene_capture_efficiency_var: Variance of the log-normal distribution for gene capture efficiency.
+    :param gene_library_size_var: Variance of the log-normal distribution for library size scaling.
+    :param gene_noise_var: Variance of the log-normal distribution for random variability.
+    :param poisson_resample: Whether to resample the expression vector as a Poisson distribution.
+    :return: Gene expression vector with noise applied.
+    Shape of the output is (1, num_genes).
+    """
+    num_genes = expr.shape[1]
+
+    # sample specific scaling across genes
+    expr *= np.random.lognormal(0, gene_capture_efficiency_var, num_genes)
+    # library size scaling
+    expr *= np.random.lognormal(0, gene_library_size_var, 1)[0]
+    # random variability
+    expr *= np.random.lognormal(0, gene_noise_var, num_genes)
+
+    if poisson_resample:
+        # re-sample as poisson with expr as mean to get integer counts
+        expr = np.random.poisson(expr)
+
+    return expr.reshape(1, -1) # back to 2D with shape[0] = 1 and shape[1] = num_genes
