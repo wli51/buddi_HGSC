@@ -43,6 +43,7 @@ def kl_loss_generator(beta: float,
 
 def reconstr_loss_generator(
         weight: float = 1.0,
+        reconstr_loss_fn: LossFn = mean_squared_error,
         agg_fn: LossAggregationFn = K.sum,
         **kwargs: Any
     ) -> Callable:
@@ -66,8 +67,8 @@ def reconstr_loss_generator(
         :return reconstr_loss: Reconstruction loss
         """
 
-        reconstr_loss = mean_squared_error(y_true, y_pred)
-        return weight * agg_fn(reconstr_loss, **kwargs)
+        loss = reconstr_loss_fn(y_true, y_pred)
+        return weight * agg_fn(loss, **kwargs)
     
     return reconstr_loss
 
