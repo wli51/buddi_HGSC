@@ -1,44 +1,36 @@
 import tensorflow as tf
-import numpy as np
-from sklearn.model_selection import train_test_split
 
-def split_dataset(dataset, test_size=0.2, shuffle=True, random_state=None):
+def train_validation_split(
+        dataset: tf.data.Dataset, 
+        val_size: float=0.2, 
+        seed:int=42):
     """
-    Splits a TensorFlow dataset into train and validation sets.
+    Uses tensorflow native shuffle and take/skip to split a dataset into train and validation sets.
+    This function will shuffle the dataset prior to splitting to ensure randomn split. 
+        However the index before and after shuffling will not be tracked so post splitting it will
+        be very difficult to associate the train and val samples back to the original dataset/meta data.
+    For this reason this function is only intended to be used for dividing the train data into train
+        and validation sets to facilitate train and validation loss computation where there is no need
+        to associate the train and validation samples back to the original dataset/meta data. 
+    
+    If you need to keep track of the identity of each sample across data splits that should be done
+        manually outside of the BuDDI dataset pipeline (perhaps during the data preprocessing step).  
 
-    Parameters:
-    - dataset: `tf.data.Dataset` object
-    - test_size: Fraction of data to be used for validation
-    - shuffle: Whether to shuffle before splitting
-    - random_state: Random seed for reproducibility
-
-    Returns:
-    - train_dataset: `tf.data.Dataset` object
-    - val_dataset: `tf.data.Dataset` object
+    :param dataset: tf.data.Dataset to split
+    :param val_size: Fraction of dataset to allocate to validation set
+    :param seed: Random seed for shuffling for the sake of reproducibility
+    :return ds_train: tf.data.Dataset train set
+    :return ds_val: tf.data.Dataset validation set
     """
-    # Convert dataset to NumPy arrays
-    data_list = list(dataset.as_numpy_iterator())  # Extract as a list of tuples
 
-    # Unpack inputs and labels (if applicable)
-    if isinstance(data_list[0], tuple):  # Supervised dataset with (X, y)
-        X, y = zip(*data_list)
-        X, y = np.array(X), np.array(y)
-        X_train, X_val, y_train, y_val = train_test_split(
-            X, y, test_size=test_size, shuffle=shuffle, random_state=random_state
-        )
+    num_samples = dataset.cardinality().numpy()
 
-        # Convert back to TensorFlow datasets
-        train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
-        val_dataset = tf.data.Dataset.from_tensor_slices((X_val, y_val))
+    train_size = int((1-val_size) * num_samples)
 
-    else:  # Unsupervised dataset (only X)
-        X = np.array(data_list)
-        X_train, X_val = train_test_split(
-            X, test_size=test_size, shuffle=shuffle, random_state=random_state
-        )
+    ds_shuffled = dataset.shuffle(
+        buffer_size=num_samples, seed=seed, reshuffle_each_iteration=False)
+    
+    ds_train = ds_shuffled.take(train_size)
+    ds_val = ds_shuffled.skip(train_size)
 
-        # Convert back to TensorFlow datasets
-        train_dataset = tf.data.Dataset.from_tensor_slices(X_train)
-        val_dataset = tf.data.Dataset.from_tensor_slices(X_val)
-
-    return train_dataset, val_dataset
+    return ds_train, ds_val
