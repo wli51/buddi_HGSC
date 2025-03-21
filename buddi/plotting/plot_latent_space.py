@@ -24,7 +24,16 @@ def _get_projection(z, type='PCA'):
 
     return proj_df
 
-def _plot_projection_marker(proj_df, color_vec, ax, title="", alpha=0.3, legend_title="", marker_vec=None):
+def _plot_projection_marker(
+        proj_df, 
+        color_vec, 
+        ax, 
+        title="", 
+        alpha=0.3, 
+        legend_title="", 
+        marker_vec=None,
+        palette="hls"
+    ):
     proj_df[legend_title] = color_vec
 
     if marker_vec is not None:
@@ -35,7 +44,7 @@ def _plot_projection_marker(proj_df, color_vec, ax, title="", alpha=0.3, legend_
         data=proj_df,
         hue=legend_title,
         style='marker' if marker_vec is not None else None,
-        palette=sns.color_palette("hls", len(np.unique(color_vec))),
+        palette=sns.color_palette(palette, len(np.unique(color_vec))),
         legend="full",
         alpha=alpha, ax= ax
     )
@@ -52,7 +61,8 @@ def plot_latent_spaces_buddi4(
         alpha=1,
         panel_width=5,
         figsize=None,
-        show_plot=True
+        show_plot=True,
+        palette="hls"
 ):
     
     y_pred = unsupervised_buddi((X_tmp))
@@ -99,7 +109,8 @@ def plot_latent_spaces_buddi4(
                 ax=axs[j, i],
                 title=latent_space_name if j == 0 else "", 
                 alpha=alpha, 
-                legend_title=color_legend_name
+                legend_title=color_legend_name,
+                palette=palette
             )
 
             # Remove legend for all but the last column in each row
