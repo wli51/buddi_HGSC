@@ -302,7 +302,7 @@ def generate_log_normal_counts(
     if present_cell_types is None:
         present_cell_types = cell_order
 
-    prop_df = pd.DataFrame(columns=cell_order)
+    prop_rows = []
 
     for _ in range(num_samples):
         rand_variance = np.random.uniform(*variance_range)
@@ -313,7 +313,9 @@ def generate_log_normal_counts(
         rand_lognorm_vec[~presence_mask] = 0
 
         rand_prop_vec = rand_lognorm_vec / rand_lognorm_vec.sum()
-        prop_df = pd.concat([prop_df, pd.DataFrame([rand_prop_vec], columns=prop_df.columns)])
+        prop_rows.append(rand_prop_vec)
+    
+    prop_df = pd.DataFrame(prop_rows, columns=cell_order)
 
     return generate_counts_from_props(prop_df, num_cells)
 
