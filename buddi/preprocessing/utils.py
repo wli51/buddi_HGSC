@@ -144,7 +144,8 @@ def generate_single_celltype_dominant_props(
         num_samp: int, 
         cell_order: Iterable[str], 
         background_prop: float = 0.01,
-        present_cell_types: Optional[Iterable[str]] = None
+        present_cell_types: Optional[Iterable[str]] = None,
+        return_metadata: bool = False
     ) -> pd.DataFrame:
     """
     Helper function to generate a proportion matrix where each row represents a sample in which one cell type 
@@ -164,6 +165,7 @@ def generate_single_celltype_dominant_props(
         present_cell_types = cell_order
 
     total_prop_list = []
+    cell_dominance_metadata = []
 
     for dominant_idx, cell_type in enumerate(cell_order):
 
@@ -184,8 +186,16 @@ def generate_single_celltype_dominant_props(
             num_samp, base_prop_df, min_corr=0.95)
         total_prop_list.append(prop_matrix)
 
-    # Concatenate into a single DataFrame
-    return pd.concat(total_prop_list, ignore_index=True)
+        cell_dominance_metadata.extend(
+            [cell_type] * num_samp
+        )
+    
+    props_df = pd.concat(total_prop_list, ignore_index=True)
+
+    if return_metadata:
+        return props_df, cell_dominance_metadata
+    else:
+        return props_df
 
 def generate_prop_from_counts(
         count_df: pd.DataFrame
