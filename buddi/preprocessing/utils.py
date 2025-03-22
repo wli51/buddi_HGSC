@@ -252,7 +252,7 @@ def generate_counts_from_props(
     for i, (_, prop_profile) in enumerate(prop_df.iterrows()):
         count_vec = np.ceil(prop_profile * num_cells[i]).astype(int)
         # Adjust rounding inconsistencies
-        count_vec[np.argmax(count_vec)] += (num_cells[i] - count_vec.sum())
+        count_vec.iloc[np.argmax(count_vec)] += (num_cells[i] - count_vec.sum())
 
         count_df = pd.concat([count_df, pd.DataFrame(count_vec).T])
 
