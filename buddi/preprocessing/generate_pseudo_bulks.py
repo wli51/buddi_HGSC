@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple, Optional, Union
 import numpy as np
 import pandas as pd
 from anndata import AnnData
+from tqdm import tqdm
 
 from . import utils
 from .utils import CellDf
@@ -33,11 +34,7 @@ def generate_pseudo_bulk_from_counts(
 
     total_expr_list = []
 
-    for samp_idx, (_, count_profile) in enumerate(count_df.iterrows()):
-        if samp_idx % 100 == 0:
-            print(f"Processing sample {samp_idx}")        
-
-        # Initialize gene expression vector for pseudobulk
+    for samp_idx, (_, count_profile) in enumerate(tqdm(count_df.iterrows(), total=len(count_df))):
         sum_over_cells = np.zeros((1, in_adata.shape[1]))
 
         for cell_idx, (cell_type, cell_count) in enumerate(count_profile.items()):
