@@ -1,7 +1,7 @@
 from typing import Callable, Any
 
 import tensorflow as tf
-from tensorflow.keras.losses import mean_squared_error, categorical_crossentropy
+from tensorflow.keras.losses import MeanSquaredError, CategoricalCrossentropy
 import tensorflow.keras.backend as K
 
 LossFn = Callable[[tf.Tensor, tf.Tensor], tf.Tensor]
@@ -43,7 +43,7 @@ def kl_loss_generator(beta: float,
 
 def reconstr_loss_generator(
         weight: float = 1.0,
-        reconstr_loss_fn: LossFn = mean_squared_error,
+        reconstr_loss_fn: LossFn = MeanSquaredError,
         agg_fn: LossAggregationFn = K.sum,
         **kwargs: Any
     ) -> Callable:
@@ -54,6 +54,8 @@ def reconstr_loss_generator(
     :param kwargs: Additional arguments to pass to the aggregation function
     :return reconstr_loss: Reconstruction loss function
     """
+
+    loss_fn = reconstr_loss_fn(**kwargs)
 
     def reconstr_loss(
             y_true: tf.Tensor, 
@@ -66,15 +68,16 @@ def reconstr_loss_generator(
         :param y_pred: Predicted values
         :return reconstr_loss: Reconstruction loss
         """
-
-        loss = reconstr_loss_fn(y_true, y_pred)
-        return weight * agg_fn(loss, **kwargs)
+        
+        loss = loss_fn(y_true, y_pred)
+        return weight * loss
+        #return weight * agg_fn(loss, **kwargs)
     
     return reconstr_loss
 
 def classifier_loss_generator(
         weight: float = 1.0,
-        loss_fn: LossFn = categorical_crossentropy, # or mean_absolute_error
+        loss_fn: LossFn = CategoricalCrossentropy, # or MeanAbsoluteError()
         agg_fn: LossAggregationFn = K.sum,
         **kwargs: Any
     ) -> Callable:
@@ -85,6 +88,8 @@ def classifier_loss_generator(
     :param kwargs: Additional arguments to pass to the aggregation function
     :return classifier_loss: Classifier loss function
     """
+
+    loss_fn = loss_fn(**kwargs)
 
     def classifier_loss(
             y_true: tf.Tensor, 
@@ -98,7 +103,8 @@ def classifier_loss_generator(
         """
 
         class_loss = loss_fn(y_true, y_pred)
-        return weight * agg_fn(class_loss, **kwargs)
+        return weight * class_loss
+        #return weight * agg_fn(class_loss, **kwargs)
     
     return classifier_loss
 
