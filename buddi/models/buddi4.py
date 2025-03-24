@@ -6,7 +6,7 @@ import tensorflow as tf
 ActivationFn = Union[str, Callable[[tf.Tensor], tf.Tensor]] # alias
 from tensorflow.keras.layers import Input, Concatenate
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import mean_absolute_error, categorical_crossentropy
+from tensorflow.keras.losses import MeanSquaredError, CategoricalCrossentropy
 
 from .components.branches import *
 from .components.layers import *
@@ -29,8 +29,8 @@ def build_buddi4(
         beta_kl_label: float = 100.0,
         beta_kl_stim: float = 100.0,
         beta_kl_samp_type: float = 100.0,
-        reconstr_loss_fn: Callable = mean_squared_error, # default loss fn
-        classifier_loss_fn: Callable = categorical_crossentropy, # default loss fn
+        reconstr_loss_fn: Callable = MeanSquaredError, # default loss fn
+        classifier_loss_fn: Callable = CategoricalCrossentropy, # default loss fn
         label_classifier_loss_fn: Optional[Callable] = None,
         stim_classifier_loss_fn: Optional[Callable] = None,
         samp_type_classifier_loss_fn: Optional[Callable] = None,
@@ -214,25 +214,25 @@ def build_buddi4(
     reconstr_loss_fn = reconstr_loss_generator(
         weight=1.0,
         reconstr_loss_fn=reconstr_loss_fn, 
-        agg_fn=K.sum, axis=-1)
+        reduction='sum')
 
     classifier_loss_fn_label = classifier_loss_generator(
         loss_fn=label_classifier_loss_fn,
         weight=1.0,#alpha_label, 
-        agg_fn=K.sum, axis=-1)
+        reduction='sum')
     classifier_loss_fn_stim = classifier_loss_generator(
         loss_fn=stim_classifier_loss_fn,
         weight=1.0,#alpha_stim, 
-        agg_fn=K.sum, axis=-1)
+        reduction='sum')
     classifier_loss_fn_samp_type = classifier_loss_generator(
         loss_fn=samp_type_classifier_loss_fn,
         weight=1.0,#alpha_samp_type, 
-        agg_fn=K.sum, axis=-1)
+        reduction='sum')
     # this is the loss function for the proportion estimator
     prop_estimator_loss_fn = classifier_loss_generator(
         loss_fn=prop_estimator_loss_fn,
         weight=1.0,#alpha_prop, 
-        agg_fn=K.sum, axis=-1)
+        reduction='sum')
 
     # --------------------- Compile ---------------------
 
