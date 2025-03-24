@@ -1,5 +1,6 @@
 from typing import Tuple, Union, Callable, Optional
 
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -346,7 +347,6 @@ def fit_buddi4(supervised_model, unsupervised_model,
     unsup_loss_df = pd.DataFrame()
 
     for epoch in range(epochs):
-        print(f"\nEpoch {epoch+1}/{epochs}")
 
         # Reshuffle and subsample supervised dataset
         dataset_supervised_subsamp = (
@@ -362,7 +362,10 @@ def fit_buddi4(supervised_model, unsupervised_model,
         unsup_batch_losses = []
 
         # Loop through both datasets simultaneously
-        for _, (sup_batch, unsup_batch) in enumerate(zip(dataset_supervised_shuffled, dataset_unsupervised_shuffled)):
+        for _, (sup_batch, unsup_batch) in enumerate(tqdm(
+            zip(dataset_supervised_shuffled, dataset_unsupervised_shuffled), 
+            total=n_batches, 
+            desc=f"Epoch {epoch+1}/{epochs}")):
 
             # Supervised training step
             sup_x, sup_y = sup_batch
