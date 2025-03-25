@@ -438,7 +438,7 @@ def fit_buddi4_v2(supervised_model, unsupervised_model,
             # Supervised training step
             sup_x, sup_y = sup_batch
             sup_loss = supervised_model.train_on_batch(sup_x, sup_y)
-            sup_batch_losses.append(sup_loss)
+            sup_batch_losses.append([x.item() for x in  sup_loss])
 
             
             # iterate over repeated unsupervised dataset
@@ -447,29 +447,30 @@ def fit_buddi4_v2(supervised_model, unsupervised_model,
             # Unsupervised training step (No labels in unsupervised dataset)
             unsup_x, unsup_y = unsup_batch
             unsup_loss = unsupervised_model.train_on_batch(unsup_x, unsup_y)
-            unsup_batch_losses.append(unsup_loss)
+            unsup_batch_losses.append([x.item() for x in  unsup_loss])
 
-        sup_epoch_avg_loss = np.mean(np.stack(sup_batch_losses), axis=0)
-        unsup_epoch_avg_loss = np.mean(np.stack(unsup_batch_losses), axis=0)
+        sup_batch_loss_df = pd.DataFrame(sup_batch_losses)
+        unsup_batch_loss_df = pd.DataFrame(unsup_batch_losses)
+        sup_batch_loss_df.columns = supervised_model.metrics_names
+        unsup_batch_loss_df.columns = unsupervised_model.metrics_names
+        sup_batch_loss_df['epoch'] = epoch
+        unsup_batch_loss_df['epoch'] = epoch
+        sup_batch_loss_df['batch'] = sup_batch_loss_df.index
+        unsup_batch_loss_df['batch'] = unsup_batch_loss_df.index
 
-        sup_loss_df = pd.concat([sup_loss_df, pd.DataFrame([sup_epoch_avg_loss])], ignore_index=True)
-        unsup_loss_df = pd.concat([unsup_loss_df, pd.DataFrame([unsup_epoch_avg_loss])], ignore_index=True)
+        sup_loss_df = pd.concat([sup_loss_df, sup_batch_loss_df], ignore_index=True)
+        unsup_loss_df = pd.concat([unsup_loss_df, unsup_batch_loss_df], ignore_index=True)
 
-    print("Training complete!")    
-
-    # Get metric names
-    sup_loss_df.columns = supervised_model.metrics_names
-    unsup_loss_df.columns = unsupervised_model.metrics_names
+    print("Training complete!")
 
     sup_loss_df.columns = [
-        col if i != 1 else 'X_reconstruction_loss' for i, col in enumerate(supervised_model.metrics_names)
+        col if i != 1 else 'X_reconstruction_loss' for i, col in enumerate(sup_loss_df.columns)
     ]
     unsup_loss_df.columns = [
-        col if i != 1 else 'X_reconstruction_loss' for i, col in enumerate(unsupervised_model.metrics_names)
+        col if i != 1 else 'X_reconstruction_loss' for i, col in enumerate(unsup_loss_df.columns)
     ]
     unsup_loss_df['type'] = 'unsupervised'
     sup_loss_df['type'] = 'supervised'
     all_loss_df = pd.concat([sup_loss_df, unsup_loss_df])
-    all_loss_df['epoch'] = all_loss_df.index
 
     return all_loss_df
